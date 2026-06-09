@@ -41,7 +41,8 @@ function createScene() {
       value: new THREE.Vector2(window.innerWidth, window.innerHeight)
     },
     uTime: { value: 0 },
-    uFlipX: { value: 1 }
+    uFlipX: { value: 1 },
+    uNorthStrength: { value: 1 }
   }
 
   const material = new THREE.ShaderMaterial({
@@ -92,7 +93,12 @@ async function init() {
     uniforms.uMouse.value.x,
     uniforms.uMouse.value.y
   )
-  const setNorth = (x, y) => targetNorth.set(x, y)
+  // Intensita dell'alone (1 = pieno, 0 = assente). Su desktop sempre 1.
+  let targetStrength = 1
+  const setNorth = (x, y, strength = 1) => {
+    targetNorth.set(x, y)
+    targetStrength = strength
+  }
 
   if (isMobileExperience()) {
     await showStartOverlay('Avvia esperienza')
@@ -119,6 +125,8 @@ async function init() {
   function animate(time) {
     uniforms.uTime.value = time * 0.001
     uniforms.uMouse.value.lerp(targetNorth, 0.12)
+    uniforms.uNorthStrength.value +=
+      (targetStrength - uniforms.uNorthStrength.value) * 0.1
 
     renderer.render(scene, camera)
     requestAnimationFrame(animate)

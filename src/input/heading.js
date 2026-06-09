@@ -1,14 +1,25 @@
-// Converte un heading bussola (gradi, 0 = nord, orario) nel punto schermo
-// che lo shader usa come "nord". heading 0 => nord davanti (in alto);
-// ruotando in senso orario il punto nord scivola verso sinistra.
-export function headingToScreen(headingDeg, width, height) {
-  const rad = (headingDeg * Math.PI) / 180
-  const cx = width * 0.5
-  const cy = height * 0.5
-  const radius = Math.min(width, height) * 0.42
+// Trasforma l'heading bussola (gradi, 0 = nord, orario) in un indicatore di
+// direzione del nord per lo shader:
+//  - x: dove si trova il nord sullo schermo
+//      nord davanti  -> centro
+//      est (90)      -> bordo sinistro (il nord e a sinistra)
+//      ovest (-90)   -> bordo destro
+//      sud (180)     -> fuori schermo
+//  - strength: quanto e "visibile" il nord
+//      nord -> 1, est/ovest -> 0.5, sud -> 0 (nessun alone)
+export function northIndicator(headingDeg, width, height) {
+  // delta in [-180, 180]: scarto angolare rispetto al nord
+  const delta = ((((headingDeg + 180) % 360) + 360) % 360) - 180
+  const deltaRad = (delta * Math.PI) / 180
 
-  const x = cx - Math.sin(rad) * radius
-  const y = cy + Math.cos(rad) * radius
+  // 90 gradi di scarto portano l'alone sul bordo schermo
+  const maxAngle = 90
+  const offset = delta / maxAngle
 
-  return { x, y }
+  const x = width * 0.5 - offset * width * 0.5
+  const y = height * 0.5
+
+  const strength = Math.max(0, 0.5 + 0.5 * Math.cos(deltaRad))
+
+  return { x, y, strength }
 }

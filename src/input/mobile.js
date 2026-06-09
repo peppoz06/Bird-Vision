@@ -1,5 +1,5 @@
 import { getDeclination } from './declination.js'
-import { headingToScreen } from './heading.js'
+import { northIndicator } from './heading.js'
 
 // Chiede il permesso per l'orientamento (necessario su iOS 13+). Va invocata
 // da un gesto utente (es. tap su un pulsante).
@@ -50,13 +50,13 @@ export function startCompass(onNorth) {
 
     const trueHeading = (magnetic + declination + screenAngle + 360) % 360
 
-    const { x, y } = headingToScreen(
+    const { x, y, strength } = northIndicator(
       trueHeading,
       window.innerWidth,
       window.innerHeight
     )
 
-    onNorth(x, y)
+    onNorth(x, y, strength)
   }
 
   // Preferisci l'evento assoluto (heading reale) quando disponibile.

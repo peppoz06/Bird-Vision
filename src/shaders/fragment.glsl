@@ -3,6 +3,7 @@ uniform vec2 uMouse;
 uniform vec2 uResolution;
 uniform float uTime;
 uniform float uFlipX;
+uniform float uNorthStrength;
 
 varying vec2 vUv;
 
@@ -176,6 +177,10 @@ void main() {
   // Luminosita: vicino al nord (mouse) = piu luce
   float northBrightness = smoothstep(0.68, 0.0, d);
   northBrightness = pow(northBrightness, 0.8);
+
+  // Intensita globale del nord: 1 quando si guarda a nord, 0 verso sud.
+  // Su desktop resta 1 (l'alone segue sempre il mouse).
+  northBrightness *= uNorthStrength;
 
   // Flow field: distorsione graduale lontano dal mouse
   float flowStrength = smoothstep(0.05, 0.62, d);
