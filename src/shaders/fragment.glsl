@@ -2,6 +2,7 @@ uniform sampler2D uWebcam;
 uniform vec2 uMouse;
 uniform vec2 uResolution;
 uniform float uTime;
+uniform float uFlipX;
 
 varying vec2 vUv;
 
@@ -33,7 +34,7 @@ vec2 electricFieldNoise(vec2 uv, vec2 north, float dist, float time, out float c
 
   vec2 gridUv = uv * vec2(110.0, 96.0);
   vec2 cell = floor(gridUv);
-  float cellNoise = hash(cell + floor(time * 16.0)) * 2.0 - 1.0;
+  float cellNoise = hash(cell + floor(time * 26.0)) * 2.0 - 1.0;
 
   vec2 jitter = vec2(
     sin(time * 22.0 + gridUv.x * 5.9 + cellNoise * 6.0),
@@ -42,7 +43,7 @@ vec2 electricFieldNoise(vec2 uv, vec2 north, float dist, float time, out float c
 
   vec2 field = n * fieldLine * 0.064 + t * fieldLine * 0.083;
   field += jitter * 0.0035;
-  field += vec2(fieldLine) * cellNoise * 0.002;
+  field += vec2(fieldLine) * cellNoise * 0.022;
 
   crackle = electricCrackle(uv + n * time * 0.02, time);
   crackle += abs(fieldLine) * 0.35;
@@ -64,7 +65,7 @@ vec2 flowField(vec2 uv, vec2 north, float dist) {
 
   vec2 ripple = vec2(
     sin(uv.y * 22.0 + uTime * 1.0 + dist * 12.0),
-    cos(uv.x * 19.0 - uTime * 0.8 + dist * 10.0)
+    cos(uv.x * 19.0 - uTime * 2.8 + dist * 10.0)
   );
 
   return stream * 0.011 + ripple * 0.04;
@@ -190,9 +191,10 @@ void main() {
   vec2 electricNoise = electricFieldNoise(uv, toNorth, d, uTime, crackle);
   distortedUv += electricNoise * electricStrength;
 
+  float sampleX = mix(distortedUv.x, 1.0 - distortedUv.x, uFlipX);
   vec4 cam = texture2D(
     uWebcam,
-    vec2(1.0 - distortedUv.x, distortedUv.y)
+    vec2(sampleX, distortedUv.y)
   );
 
   vec3 color = tetrachromaticAvianVision(cam.rgb, uv, uTime);

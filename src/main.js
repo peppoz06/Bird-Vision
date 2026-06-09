@@ -1,6 +1,9 @@
 import './style.css'
 import * as THREE from 'three'
 import { setupWebcam } from './webcam/webcam.js'
+import { isMobileExperience } from './input/detect.js'
+import { setupDesktopInput } from './input/desktop.js'
+import { requestOrientationPermission, startCompass } from './input/mobile.js'
 import vertexShader from './shaders/vertex.glsl?raw'
 import fragmentShader from './shaders/fragment.glsl?raw'
 
@@ -18,37 +21,27 @@ function setupShaderHotReload(material) {
   })
 }
 
-async function init() {
-  const video = await setupWebcam()
-
+function createScene() {
   const scene = new THREE.Scene()
-
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
 
   const renderer = new THREE.WebGLRenderer()
   renderer.setSize(window.innerWidth, window.innerHeight)
   document.body.appendChild(renderer.domElement)
 
-  const webcamTexture = new THREE.VideoTexture(video)
-
   const uniforms = {
-    uWebcam: { value: webcamTexture },
-
+    uWebcam: { value: null },
     uMouse: {
       value: new THREE.Vector2(
         window.innerWidth * 0.5,
         window.innerHeight * 0.5
       )
     },
-
     uResolution: {
-      value: new THREE.Vector2(
-        window.innerWidth,
-        window.innerHeight
-      )
+      value: new THREE.Vector2(window.innerWidth, window.innerHeight)
     },
-
-    uTime: { value: 0 }
+    uTime: { value: 0 },
+    uFlipX: { value: 1 }
   }
 
   const material = new THREE.ShaderMaterial({
@@ -59,34 +52,75 @@ async function init() {
 
   setupShaderHotReload(material)
 
-  const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(2, 2),
-    material
-  )
-
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material)
   scene.add(plane)
-
-  window.addEventListener('mousemove', (e) => {
-    uniforms.uMouse.value.set(
-      e.clientX,
-      window.innerHeight - e.clientY
-    )
-  })
 
   window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight)
-
-    uniforms.uResolution.value.set(
-      window.innerWidth,
-      window.innerHeight
-    )
+    uniforms.uResolution.value.set(window.innerWidth, window.innerHeight)
   })
+
+  return { scene, camera, renderer, uniforms }
+}
+
+// Overlay con pulsante: serve a iOS per i permessi (bussola) e in generale
+// a sbloccare camera/GPS con un gesto utente.
+function showStartOverlay(label) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div')
+    overlay.className = 'start-overlay'
+
+    const button = document.createElement('button')
+    button.className = 'start-button'
+    button.textContent = label
+
+    button.addEventListener('click', () => {
+      overlay.remove()
+      resolve()
+    })
+
+    overlay.appendChild(button)
+    document.body.appendChild(overlay)
+  })
+}
+
+async function init() {
+  const { scene, camera, renderer, uniforms } = createScene()
+
+  // Punto "nord" verso cui lo shader si illumina; viene interpolato dolcemente.
+  const targetNorth = new THREE.Vector2(
+    uniforms.uMouse.value.x,
+    uniforms.uMouse.value.y
+  )
+  const setNorth = (x, y) => targetNorth.set(x, y)
+
+  if (isMobileExperience()) {
+    await showStartOverlay('Avvia esperienza')
+
+    try {
+      await requestOrientationPermission()
+    } catch (err) {
+      console.warn(err)
+    }
+
+    const video = await setupWebcam({ facingMode: 'environment' })
+    uniforms.uWebcam.value = new THREE.VideoTexture(video)
+    uniforms.uFlipX.value = 0 // camera posteriore: nessun mirror
+
+    startCompass(setNorth)
+  } else {
+    const video = await setupWebcam()
+    uniforms.uWebcam.value = new THREE.VideoTexture(video)
+    uniforms.uFlipX.value = 1 // camera frontale: effetto specchio
+
+    setupDesktopInput(setNorth)
+  }
 
   function animate(time) {
     uniforms.uTime.value = time * 0.001
+    uniforms.uMouse.value.lerp(targetNorth, 0.12)
 
     renderer.render(scene, camera)
-
     requestAnimationFrame(animate)
   }
 
