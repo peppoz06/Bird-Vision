@@ -11,11 +11,11 @@ import depthRefineFrag from './shaders/depthRefine.frag.glsl?raw'
 import pointCloudVert from './shaders/pointCloud.vert.glsl?raw'
 import pointCloudFrag from './shaders/pointCloud.frag.glsl?raw'
 
-const DEPTH_W = 512
-const DEPTH_H = 384
+const DEPTH_W = 640
+const DEPTH_H = 480
 
 function getGridSize(mobile) {
-  return mobile ? { w: 128, h: 96 } : { w: 200, h: 150 }
+  return mobile ? { w: 220, h: 165 } : { w: 360, h: 270 }
 }
 
 function createRenderTarget(w, h) {
@@ -47,10 +47,13 @@ function createFullscreenPass(fragmentShader, uniforms, { shared = false } = {})
   }
 }
 
-function createPointCloud(gridW, gridH, uniforms) {
+function createPointCloud(gridW, gridH, uniforms, aspect) {
   const count = gridW * gridH
   const positions = new Float32Array(count * 3)
   const pointUvs = new Float32Array(count * 2)
+
+  const spanX = 1.9 * aspect
+  const spanY = 1.9
 
   for (let y = 0; y < gridH; y++) {
     for (let x = 0; x < gridW; x++) {
@@ -58,8 +61,8 @@ function createPointCloud(gridW, gridH, uniforms) {
       const u = x / (gridW - 1)
       const v = 1.0 - y / (gridH - 1)
 
-      positions[i * 3] = (u - 0.5) * 1.85
-      positions[i * 3 + 1] = (v - 0.5) * 1.85
+      positions[i * 3] = (u - 0.5) * spanX
+      positions[i * 3 + 1] = (v - 0.5) * spanY
       positions[i * 3 + 2] = 0.0
 
       pointUvs[i * 2] = u
@@ -76,9 +79,9 @@ function createPointCloud(gridW, gridH, uniforms) {
     vertexShader: buildShader(pointCloudVert),
     fragmentShader: buildShader(pointCloudFrag),
     transparent: true,
-    depthWrite: true,
+    depthWrite: false,
     depthTest: true,
-    blending: THREE.NormalBlending
+    blending: THREE.AdditiveBlending
   })
 
   return new THREE.Points(geometry, material)
@@ -127,8 +130,9 @@ async function init() {
   renderer.setClearColor(0x000000, 1)
   document.body.appendChild(renderer.domElement)
 
-  const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.01, 8)
-  camera.position.set(0, 0, 1.08)
+  const aspect = window.innerWidth / window.innerHeight
+  const camera = new THREE.PerspectiveCamera(50, aspect, 0.01, 8)
+  camera.position.set(0, 0, 1.18)
 
   const scene = new THREE.Scene()
 
@@ -144,8 +148,9 @@ async function init() {
     uTime: { value: 0 },
     uFlipX: { value: 1 },
     uNorthStrength: { value: 1 },
-    uPointScale: { value: mobile ? 2.2 : 2.8 },
-    uDepthScale: { value: 0.75 }
+    uPointScale: { value: mobile ? 0.55 : 0.7 },
+    uDepthScale: { value: 1.05 },
+    uGridSize: { value: new THREE.Vector2(gridW, gridH) }
   }
 
   const depthRawTarget = createRenderTarget(DEPTH_W, DEPTH_H)
@@ -183,7 +188,7 @@ async function init() {
 
   sharedUniforms.uDepth.value = depthRefinedTarget.texture
 
-  const points = createPointCloud(gridW, gridH, sharedUniforms)
+  const points = createPointCloud(gridW, gridH, sharedUniforms, aspect)
   scene.add(points)
 
   setupShaderHotReload(points.material)
