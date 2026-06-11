@@ -5,7 +5,7 @@ uniform vec2 uTexelSize;
 
 varying vec2 vUv;
 
-float luminance(vec3 c) {
+float getLuma(vec3 c) {
   return dot(c, vec3(0.2126, 0.7152, 0.0722));
 }
 
@@ -15,7 +15,7 @@ vec2 sampleUv(vec2 uv) {
 }
 
 float sampleLum(vec2 uv) {
-  return luminance(texture2D(uWebcam, sampleUv(uv)).rgb);
+  return getLuma(texture2D(uWebcam, sampleUv(uv)).rgb);
 }
 
 // Dark channel prior: regioni scure/velate tendono a essere piu lontane

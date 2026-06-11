@@ -28,18 +28,23 @@ function createRenderTarget(w, h) {
   })
 }
 
-function createFullscreenPass(fragmentShader, uniforms) {
+function createFullscreenPass(fragmentShader, uniforms, { shared = false } = {}) {
   const material = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: fullscreenVert,
-    fragmentShader: buildShader(fragmentShader)
+    fragmentShader: shared ? buildShader(fragmentShader) : fragmentShader
   })
 
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material)
   const scene = new THREE.Scene()
   scene.add(mesh)
 
-  return { scene, camera: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), material }
+  return {
+    scene,
+    camera: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1),
+    material,
+    uniforms: material.uniforms
+  }
 }
 
 function createPointCloud(gridW, gridH, uniforms) {
