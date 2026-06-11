@@ -5,8 +5,9 @@
 //      est (90)      -> bordo sinistro (il nord e a sinistra)
 //      ovest (-90)   -> bordo destro
 //      sud (180)     -> fuori schermo
-//  - strength: quanto e "visibile" il nord
-//      nord -> 1, est/ovest -> 0.5, sud -> 0 (nessun alone)
+//  - strength: allineamento bussola (1 = nord, 0 = sud/oposto)
+//      nord -> calma e alone al centro
+//      sud -> agitazione punti (direzione errata), immagine resta leggibile
 export function northIndicator(headingDeg, width, height) {
   // delta in [-180, 180]: scarto angolare rispetto al nord
   const delta = ((((headingDeg + 180) % 360) + 360) % 360) - 180
