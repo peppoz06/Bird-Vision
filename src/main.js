@@ -15,7 +15,7 @@ const DEPTH_W = 640
 const DEPTH_H = 480
 
 function getGridSize(mobile) {
-  return mobile ? { w: 220, h: 165 } : { w: 360, h: 270 }
+  return mobile ? { w: 260, h: 195 } : { w: 360, h: 270 }
 }
 
 function createRenderTarget(w, h) {
@@ -148,8 +148,10 @@ async function init() {
     uTime: { value: 0 },
     uFlipX: { value: 1 },
     uNorthStrength: { value: 1 },
-    uPointScale: { value: mobile ? 1.0 : 1.25 },
-    uDepthScale: { value: 0.95 },
+    uPointScale: { value: mobile ? 1.15 : 1.25 },
+    uDepthScale: { value: mobile ? 0.85 : 0.95 },
+    uMobileBoost: { value: mobile ? 1.5 : 1.0 },
+    uExposureLift: { value: mobile ? 0.08 : 0.0 },
     uGridSize: { value: new THREE.Vector2(gridW, gridH) }
   }
 
@@ -212,7 +214,7 @@ async function init() {
       console.warn(err)
     }
 
-    const video = await setupWebcam({ facingMode: 'environment' })
+    const video = await setupWebcam({ facingMode: 'environment', mobile: true })
     sharedUniforms.uWebcam.value = new THREE.VideoTexture(video)
     sharedUniforms.uWebcam.value.minFilter = THREE.LinearFilter
     sharedUniforms.uWebcam.value.magFilter = THREE.LinearFilter

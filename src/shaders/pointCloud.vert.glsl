@@ -8,6 +8,8 @@ uniform float uFlipX;
 uniform float uNorthStrength;
 uniform float uPointScale;
 uniform float uDepthScale;
+uniform float uMobileBoost;
+uniform float uExposureLift;
 
 attribute vec2 pointUv;
 
@@ -67,10 +69,13 @@ void main() {
   ) * 0.4;
 
   vec2 agitateOffset = agitate * agitateAmount * 0.016;
-  distortedUv += agitateOffset * 5.0;
+  // Agitazione spaziale si; UV solo leggera per non strappare il colore
+  distortedUv += agitateOffset * mix(1.0, 0.35, agitateAmount);
 
   vec2 texUv = sampleTexUv(distortedUv);
-  vColor = texture2D(uWebcam, texUv).rgb;
+  vec3 rawColor = texture2D(uWebcam, texUv).rgb;
+  rawColor = pow(rawColor, vec3(0.82)) * uMobileBoost + uExposureLift;
+  vColor = rawColor;
   vDepth = texture2D(uDepth, clamp(sampleUv, 0.001, 0.999)).r;
   vLuma = dot(vColor, vec3(0.2126, 0.7152, 0.0722));
 
