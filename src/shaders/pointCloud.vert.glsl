@@ -69,13 +69,13 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mvPosition;
 
-  float perspectiveScale = 120.0 / max(-mvPosition.z, 0.12);
-  float depthSize = mix(0.45, 0.85, vDepth);
-  float lumaSize = mix(0.7, 1.0, smoothstep(0.08, 0.55, vLuma));
+  float perspectiveScale = 160.0 / max(-mvPosition.z, 0.12);
+  float depthSize = mix(0.55, 0.95, vDepth);
+  float lumaSize = mix(0.75, 1.0, smoothstep(0.04, 0.5, vLuma));
 
   gl_PointSize = clamp(
     uPointScale * depthSize * lumaSize * perspectiveScale,
-    1.0,
-    2.2
+    1.5,
+    3.0
   );
 }

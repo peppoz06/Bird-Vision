@@ -12,37 +12,36 @@ void main() {
   vec2 pc = gl_PointCoord - 0.5;
   float dist = length(pc);
 
-  // Grana fine: punto piccolo e netto, senza alone largo
-  float grain = 1.0 - smoothstep(0.18, 0.5, dist);
+  // Grana fine ma visibile: nucleo piccolo, bordo netto
+  float grain = 1.0 - smoothstep(0.32, 0.5, dist);
   if (grain <= 0.01) discard;
 
   vec3 color = tetrachromaticAvianVision(vColor, vUv, uTime);
 
-  float brightness = mix(0.22, 1.25, vNorthFactor);
+  float brightness = mix(0.55, 1.35, vNorthFactor);
   color *= brightness;
-  color += vNorthFactor * vec3(0.03, 0.08, 0.14);
+  color += vNorthFactor * vec3(0.04, 0.1, 0.16);
 
   vec3 electricGlow = vec3(0.05, 0.22, 0.42);
-  color += vCrackle * vElectricStrength * electricGlow * 0.22;
+  color += vCrackle * vElectricStrength * electricGlow * 0.24;
   color += vElectricStrength *
     abs(sin(uTime * 26.0 + vUv.x * 120.0 + vDepth * 36.0)) *
     vec3(0.03, 0.12, 0.24) *
-    0.14;
+    0.16;
 
-  // Profondita: lontano piu tenue, vicino piu definito
-  color *= mix(0.25, 1.0, pow(vDepth, 0.75));
+  // Profondita: lontano piu tenue, vicino definito
+  color *= mix(0.55, 1.0, pow(vDepth, 0.7));
 
-  // Enfatizza bordi e struttura (come nell'immagine di riferimento)
-  color *= mix(0.65, 1.15, smoothstep(0.05, 0.45, vLuma));
+  // Struttura: enfatizza bordi senza spegnere le zone scure
+  color *= mix(0.85, 1.1, smoothstep(0.04, 0.5, vLuma));
 
-  color = pow(color, vec3(0.82));
+  color = pow(color, vec3(0.78));
 
   float edge = distance(vUv, vec2(0.5));
-  float vignette = smoothstep(0.95, 0.35, edge);
+  float vignette = smoothstep(0.96, 0.4, edge);
   color *= vignette;
 
-  // Additive blending: alpha bassa per grana densa
-  float alpha = grain * mix(0.18, 0.55, vDepth) * mix(0.4, 1.0, vNorthFactor + 0.1);
+  float alpha = grain * mix(0.65, 1.0, vDepth) * mix(0.55, 1.0, vNorthFactor + 0.2);
 
   gl_FragColor = vec4(color, alpha);
 }

@@ -79,9 +79,9 @@ function createPointCloud(gridW, gridH, uniforms, aspect) {
     vertexShader: buildShader(pointCloudVert),
     fragmentShader: buildShader(pointCloudFrag),
     transparent: true,
-    depthWrite: false,
+    depthWrite: true,
     depthTest: true,
-    blending: THREE.AdditiveBlending
+    blending: THREE.NormalBlending
   })
 
   return new THREE.Points(geometry, material)
@@ -148,8 +148,8 @@ async function init() {
     uTime: { value: 0 },
     uFlipX: { value: 1 },
     uNorthStrength: { value: 1 },
-    uPointScale: { value: mobile ? 0.55 : 0.7 },
-    uDepthScale: { value: 1.05 },
+    uPointScale: { value: mobile ? 1.0 : 1.25 },
+    uDepthScale: { value: 0.95 },
     uGridSize: { value: new THREE.Vector2(gridW, gridH) }
   }
 
