@@ -42,12 +42,12 @@ void main() {
   float northBrightness = pow(smoothstep(0.68, 0.0, d), 0.8) * uNorthStrength;
   vNorthFactor = northBrightness;
 
-  float flowStrength = pow(smoothstep(0.05, 0.62, d), 1.45);
-  vec2 distortedUv = sampleUv + flowField(sampleUv, toNorth, d, uTime) * flowStrength;
+  float flowStrength = pow(smoothstep(0.04, 0.58, d), 1.35);
+  vec2 distortedUv = sampleUv + flowField(sampleUv, toNorth, d, uTime) * flowStrength * 1.45;
 
   float crackle;
-  vElectricStrength = pow(smoothstep(0.1, 0.7, d), 1.55);
-  distortedUv += electricFieldNoise(sampleUv, toNorth, d, uTime, crackle) * vElectricStrength;
+  vElectricStrength = pow(smoothstep(0.08, 0.65, d), 1.4);
+  distortedUv += electricFieldNoise(sampleUv, toNorth, d, uTime, crackle) * vElectricStrength * 1.4;
   vCrackle = crackle;
 
   vec2 texUv = sampleTexUv(distortedUv);
@@ -61,9 +61,11 @@ void main() {
   float z = (1.0 - vDepth) * uDepthScale;
   pos.z -= z;
 
-  // Parallax leggero: mantiene la forma senza sfocare
+  // Curvatura crescente lontano dal nord
   vec2 radial = (pointUv - 0.5) * 2.0;
-  pos.xy += radial * z * 0.06;
+  float farFromNorth = pow(smoothstep(0.06, 0.62, d), 1.25);
+  pos.xy += radial * z * (0.06 + farFromNorth * 0.09);
+  pos.xy += radial * farFromNorth * length(radial) * 0.055;
   pos.xy += jitter / uGridSize * 0.04;
 
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
