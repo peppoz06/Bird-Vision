@@ -4,6 +4,7 @@ import { setupWebcam } from './webcam/webcam.js'
 import { isMobileExperience } from './input/detect.js'
 import { setupDesktopInput } from './input/desktop.js'
 import { requestOrientationPermission, startCompass } from './input/mobile.js'
+import { runOnboarding } from './onboarding.js'
 import { buildShader } from './shaders/buildShader.js'
 import fullscreenVert from './shaders/vertex.glsl?raw'
 import depthFrag from './shaders/depth.frag.glsl?raw'
@@ -101,34 +102,51 @@ function setupShaderHotReload(pointMaterial) {
   })
 }
 
-function showStartOverlay(label) {
+function needsOrientationPermission() {
+  return (
+    typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function'
+  )
+}
+
+function waitForFirstTouch() {
   return new Promise((resolve) => {
-    const overlay = document.createElement('div')
-    overlay.className = 'start-overlay'
+    const gate = document.createElement('div')
+    gate.className = 'touch-gate'
 
-    const button = document.createElement('button')
-    button.className = 'start-button'
-    button.textContent = label
+    gate.addEventListener(
+      'touchstart',
+      () => {
+        gate.remove()
+        resolve()
+      },
+      { once: true, passive: true }
+    )
 
-    button.addEventListener('click', () => {
-      overlay.remove()
-      resolve()
-    })
-
-    overlay.appendChild(button)
-    document.body.appendChild(overlay)
+    document.body.appendChild(gate)
   })
+}
+
+function attachWebcamTexture(sharedUniforms, video, flipX) {
+  sharedUniforms.uWebcam.value = new THREE.VideoTexture(video)
+  sharedUniforms.uWebcam.value.minFilter = THREE.LinearFilter
+  sharedUniforms.uWebcam.value.magFilter = THREE.LinearFilter
+  sharedUniforms.uFlipX.value = flipX
 }
 
 async function init() {
   const mobile = isMobileExperience()
   const { w: gridW, h: gridH } = getGridSize(mobile)
 
+  const stage = document.createElement('div')
+  stage.className = 'experience-stage experience-stage--blurred'
+  document.body.appendChild(stage)
+
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.5 : 2))
   renderer.setSize(window.innerWidth, window.innerHeight)
   renderer.setClearColor(0x000000, 1)
-  document.body.appendChild(renderer.domElement)
+  stage.appendChild(renderer.domElement)
 
   const aspect = window.innerWidth / window.innerHeight
   const camera = new THREE.PerspectiveCamera(50, aspect, 0.01, 8)
@@ -200,36 +218,60 @@ async function init() {
     sharedUniforms.uMouse.value.y
   )
   let targetStrength = 1
+  let northInputEnabled = false
+
   const setNorth = (x, y, strength = 1) => {
+    if (!northInputEnabled) return
     targetNorth.set(x, y)
     targetStrength = strength
   }
 
-  if (mobile) {
-    await showStartOverlay('Avvia esperienza')
+  const onboardingOverlay = document.createElement('div')
+  onboardingOverlay.className = 'onboarding'
+  onboardingOverlay.innerHTML = '<p class="onboarding__text"></p>'
+  document.body.appendChild(onboardingOverlay)
 
-    try {
-      await requestOrientationPermission()
-    } catch (err) {
-      console.warn(err)
+  function beginInteractiveExperience() {
+    northInputEnabled = true
+
+    if (mobile) {
+      startCompass(setNorth)
+    } else {
+      setupDesktopInput(setNorth)
     }
-
-    const video = await setupWebcam({ facingMode: 'environment', mobile: true })
-    sharedUniforms.uWebcam.value = new THREE.VideoTexture(video)
-    sharedUniforms.uWebcam.value.minFilter = THREE.LinearFilter
-    sharedUniforms.uWebcam.value.magFilter = THREE.LinearFilter
-    sharedUniforms.uFlipX.value = 0
-
-    startCompass(setNorth)
-  } else {
-    const video = await setupWebcam()
-    sharedUniforms.uWebcam.value = new THREE.VideoTexture(video)
-    sharedUniforms.uWebcam.value.minFilter = THREE.LinearFilter
-    sharedUniforms.uWebcam.value.magFilter = THREE.LinearFilter
-    sharedUniforms.uFlipX.value = 1
-
-    setupDesktopInput(setNorth)
   }
+
+  runOnboarding({
+    overlay: onboardingOverlay,
+    stage,
+    onComplete: beginInteractiveExperience
+  })
+
+  async function setupMedia() {
+    try {
+      if (mobile) {
+        if (needsOrientationPermission()) {
+          await waitForFirstTouch()
+
+          try {
+            await requestOrientationPermission()
+          } catch (err) {
+            console.warn(err)
+          }
+        }
+
+        const video = await setupWebcam({ facingMode: 'environment', mobile: true })
+        attachWebcamTexture(sharedUniforms, video, 0)
+      } else {
+        const video = await setupWebcam()
+        attachWebcamTexture(sharedUniforms, video, 1)
+      }
+    } catch (error) {
+      console.error('Webcam non disponibile:', error)
+    }
+  }
+
+  setupMedia()
 
   window.addEventListener('resize', () => {
     const w = window.innerWidth
@@ -255,17 +297,12 @@ async function init() {
     if (sharedUniforms.uWebcam.value) {
       sharedUniforms.uWebcam.value.needsUpdate = true
 
-      // Pass 1: stima profondita multi-segnale
       renderPass(depthPass, depthRawTarget)
-
-      // Pass 2: raffinamento edge-aware + stabilizzazione temporale
       renderPass(depthRefinePass, depthRefinedTarget)
 
-      // Pass 3: point cloud 3D
       renderer.setRenderTarget(null)
       renderer.render(scene, camera)
 
-      // Aggiorna buffer temporali per il frame successivo
       copyPass.uniforms.uSource.value = depthRefinedTarget.texture
       renderPass(copyPass, depthPrevTarget)
 
@@ -279,4 +316,6 @@ async function init() {
   animate()
 }
 
-init()
+init().catch((error) => {
+  console.error(error)
+})

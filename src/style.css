@@ -5,40 +5,56 @@ body {
   background: black;
 }
 
-video {
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
-  transform: scaleX(-1);
-}
-
-.start-overlay {
+.experience-stage {
   position: fixed;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at center, #06121f, #000);
+  filter: blur(0px);
+  transition: filter 1s ease;
+}
+
+.experience-stage canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+.experience-stage--blurred {
+  filter: blur(8px);
+}
+
+.onboarding {
+  position: fixed;
+  inset: 0;
   z-index: 10;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 1s ease;
 }
 
-.start-button {
-  padding: 18px 36px;
-  font-size: 18px;
-  font-family: system-ui, sans-serif;
-  letter-spacing: 0.04em;
-  color: #cfeeff;
-  background: rgba(10, 40, 70, 0.6);
-  border: 1px solid #2b6f9e;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
+.onboarding--fade-out {
+  opacity: 0;
 }
 
-.start-button:hover {
-  background: rgba(20, 70, 120, 0.8);
+.onboarding__text {
+  margin: 0;
+  padding: 0 1.5rem;
+  color: #fff;
+  font-family: 'Lexend Deca', sans-serif;
+  font-weight: 400;
+  font-size: clamp(28px, 6vw, 64px);
+  line-height: 1.15;
+  text-align: center;
+  white-space: pre-line;
+  text-shadow:
+    0 0 24px rgba(255, 255, 255, 0.35),
+    0 2px 18px rgba(0, 0, 0, 0.45);
+  transition: opacity 0.35s ease;
 }
 
-.start-button:active {
-  transform: scale(0.97);
+.touch-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
 }
