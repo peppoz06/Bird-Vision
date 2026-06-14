@@ -21,24 +21,49 @@ function delay(ms) {
   })
 }
 
+function waitForTransition(el, ms) {
+  return new Promise((resolve) => {
+    let done = false
+
+    const finish = () => {
+      if (done) return
+      done = true
+      el.removeEventListener('transitionend', onEnd)
+      resolve()
+    }
+
+    const onEnd = (event) => {
+      if (event.target === el && event.propertyName === 'opacity') {
+        finish()
+      }
+    }
+
+    el.addEventListener('transitionend', onEnd)
+    window.setTimeout(finish, ms + 50)
+  })
+}
+
 export function runOnboarding({ overlay, stage, onComplete }) {
   const textEl = overlay.querySelector('.onboarding__text')
 
-  function fadeIn(step) {
+  async function fadeIn(step) {
     onboardingStep = step
     textEl.textContent = SCREENS[step]
     textEl.style.opacity = '0'
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        textEl.style.opacity = '1'
-      })
-    })
+    void textEl.offsetWidth
+    textEl.style.opacity = '1'
+    await waitForTransition(textEl, TEXT_FADE_MS)
   }
 
-  function fadeOut() {
+  async function fadeOut() {
     textEl.style.opacity = '0'
-    return delay(TEXT_FADE_MS)
+    await waitForTransition(textEl, TEXT_FADE_MS)
+  }
+
+  async function showScreen(step) {
+    await fadeIn(step)
+    await delay(STEP_DURATIONS[step])
+    await fadeOut()
   }
 
   function finishOnboarding() {
@@ -53,16 +78,10 @@ export function runOnboarding({ overlay, stage, onComplete }) {
   }
 
   async function runSequence() {
-    fadeIn(0)
-    await delay(STEP_DURATIONS[0])
-
-    for (let step = 1; step < SCREENS.length; step++) {
-      await fadeOut()
-      fadeIn(step)
-      await delay(STEP_DURATIONS[step])
+    for (let step = 0; step < SCREENS.length; step++) {
+      await showScreen(step)
     }
 
-    await fadeOut()
     finishOnboarding()
   }
 
