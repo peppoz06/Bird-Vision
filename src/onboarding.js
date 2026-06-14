@@ -11,20 +11,34 @@ to orient themselves`,
 Find North`
 ]
 
-const STEP_DURATION = 3000
-const FADE_DURATION = 1000
+const STEP_DURATIONS = [4000, 5000, 4000]
+const TEXT_FADE_MS = 600
+const OVERLAY_FADE_MS = 1000
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+}
 
 export function runOnboarding({ overlay, stage, onComplete }) {
   const textEl = overlay.querySelector('.onboarding__text')
 
-  function showStep(step) {
+  function fadeIn(step) {
     onboardingStep = step
+    textEl.textContent = SCREENS[step]
     textEl.style.opacity = '0'
 
     requestAnimationFrame(() => {
-      textEl.textContent = SCREENS[step]
-      textEl.style.opacity = '1'
+      requestAnimationFrame(() => {
+        textEl.style.opacity = '1'
+      })
     })
+  }
+
+  function fadeOut() {
+    textEl.style.opacity = '0'
+    return delay(TEXT_FADE_MS)
   }
 
   function finishOnboarding() {
@@ -35,12 +49,22 @@ export function runOnboarding({ overlay, stage, onComplete }) {
     window.setTimeout(() => {
       overlay.remove()
       onComplete()
-    }, FADE_DURATION)
+    }, OVERLAY_FADE_MS)
   }
 
-  showStep(0)
+  async function runSequence() {
+    fadeIn(0)
+    await delay(STEP_DURATIONS[0])
 
-  window.setTimeout(() => showStep(1), STEP_DURATION)
-  window.setTimeout(() => showStep(2), STEP_DURATION * 2)
-  window.setTimeout(finishOnboarding, STEP_DURATION * 3)
+    for (let step = 1; step < SCREENS.length; step++) {
+      await fadeOut()
+      fadeIn(step)
+      await delay(STEP_DURATIONS[step])
+    }
+
+    await fadeOut()
+    finishOnboarding()
+  }
+
+  runSequence()
 }
