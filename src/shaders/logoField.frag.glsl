@@ -1,37 +1,59 @@
-uniform sampler2D uFieldMap;
+uniform sampler2D uMask;
+uniform vec2 uResolution;
+uniform vec2 uFit;
 uniform float uTime;
-uniform float uPulseSpeed;
-uniform vec2 uFieldCenter;
-uniform vec2 uAspect;
 
 varying vec2 vUv;
 
 void main() {
-  vec4 tex = texture2D(uFieldMap, vUv);
-  float line = 1.0 - dot(tex.rgb, vec3(0.299, 0.587, 0.114));
-  line = smoothstep(0.08, 0.42, line);
+  // "contain" mapping: keep the drawing aspect ratio inside the canvas box.
+  vec2 uv = (vUv - 0.5) / uFit + 0.5;
 
-  if (line < 0.001) {
-    discard;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+    gl_FragColor = vec4(0.0);
+    return;
   }
 
-  vec2 fromCenter = (vUv - uFieldCenter) * vec2(uAspect.x, 1.0);
-  float dist = length(fromCenter);
-  float maxDist = 0.72;
-  float normDist = clamp(dist / maxDist, 0.0, 1.0);
+  float mask = texture2D(uMask, uv).a;
 
-  float cycle = fract(uTime * uPulseSpeed);
-  float band = 0.11;
-  float pulse = smoothstep(cycle - band, cycle, normDist)
-    * (1.0 - smoothstep(cycle, cycle + band, normDist));
+  if (mask < 0.02) {
+    gl_FragColor = vec4(0.0);
+    return;
+  }
 
-  float angle = atan(fromCenter.y, fromCenter.x);
-  float iridescence = sin(angle * 2.5 + uTime * 1.6) * 0.5 + 0.5;
-  vec3 glow = mix(vec3(0.78, 0.9, 1.0), vec3(0.55, 0.78, 1.0), iridescence);
+  // Pixel-space offset from the center of the drawing (aspect aware).
+  vec2 p = (vUv - 0.5) * uResolution;
+  float dist = length(p);
 
-  float base = 0.34 + pulse * 0.66;
-  vec3 color = vec3(line * base) + glow * line * pulse * 0.85;
-  float alpha = line * (0.38 + pulse * 0.62);
+  // Vertical half-extent of the visible drawing: the wave must reach the
+  // top and bottom tips, which are the farthest points from the center.
+  float maxDist = uFit.y * 0.5 * uResolution.y * 1.04;
+  float nd = clamp(dist / maxDist, 0.0, 1.25);
 
-  gl_FragColor = vec4(color, alpha);
+  // Wavefront travelling outward from the center (nd = 0) to the tips (nd = 1).
+  float speed = 0.32;
+  float front = fract(uTime * speed) * 1.12;
+
+  // Bright travelling band centered on the wavefront.
+  float band = smoothstep(0.16, 0.0, abs(nd - front));
+
+  // Soft luminous tail trailing behind the front.
+  float tail = smoothstep(0.55, 0.0, front - nd) * step(nd, front) * 0.4;
+
+  float pulse = band + tail;
+
+  // Gentle constant visibility so the field is always perceptible.
+  float base = 0.24;
+  float intensity = base + pulse * 1.2;
+
+  // Subtle iridescence driven by angle and the moving wavefront.
+  float ang = atan(p.y, p.x);
+  vec3 cool = vec3(0.62, 0.82, 1.0);
+  vec3 warm = vec3(0.86, 0.80, 1.0);
+  vec3 tint = mix(cool, warm, 0.5 + 0.5 * sin(ang * 2.0 + front * 6.2831));
+
+  vec3 col = tint * intensity;
+  float alpha = mask * clamp(intensity, 0.0, 1.0);
+
+  gl_FragColor = vec4(col, alpha);
 }

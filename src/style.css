@@ -53,6 +53,12 @@ body {
   pointer-events: none;
 }
 
+.logoIntro--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
 .logoIntro__button {
   border: 0;
   padding: 0;
@@ -73,17 +79,6 @@ body {
   position: relative;
   display: inline-block;
   font-size: clamp(3.5rem, 16vw, 9rem);
-  opacity: 1;
-  transition: opacity 0.35s ease;
-}
-
-.logoIntro__mark--hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.logoIntro--about-open .logoIntro__button {
-  pointer-events: none;
 }
 
 .logoIntro__text {
@@ -120,7 +115,7 @@ body {
   pointer-events: none;
 }
 
-.logoIntro__field-canvas {
+.logoIntro__canvas {
   display: block;
   width: 100%;
   height: 100%;

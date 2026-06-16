@@ -209,10 +209,11 @@ async function init() {
     targetStrength = strength
   }
 
-  const logoIntro = createLogoIntro()
+  const logoOverlay = createLogoIntro()
   const about = initAbout({
-    onOpen: () => logoIntro.setAboutMode(true),
-    onClose: () => logoIntro.setAboutMode(false)
+    onToggle: (open) => {
+      logoOverlay.classList.toggle('logoIntro--hidden', open)
+    }
   })
   about.showControls()
 
@@ -246,7 +247,7 @@ async function init() {
   }
 
   runLogoIntro({
-    logoIntro,
+    overlay: logoOverlay,
     stage,
     onStart: beginInteractiveExperience
   })

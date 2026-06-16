@@ -1,4 +1,4 @@
-export function initAbout({ onOpen, onClose } = {}) {
+export function initAbout({ onToggle } = {}) {
   const toggle = document.createElement('button')
   toggle.type = 'button'
   toggle.className = 'about-toggle about-toggle--hidden'
@@ -65,19 +65,12 @@ export function initAbout({ onOpen, onClose } = {}) {
   let isOpen = false
 
   function setOpen(nextOpen) {
-    if (isOpen === nextOpen) return
-
     isOpen = nextOpen
     panel.classList.toggle('about-panel--open', isOpen)
     toggle.classList.toggle('about-toggle--active', isOpen)
     toggle.setAttribute('aria-expanded', String(isOpen))
     panel.setAttribute('aria-hidden', String(!isOpen))
-
-    if (isOpen) {
-      onOpen?.()
-    } else {
-      onClose?.()
-    }
+    onToggle?.(isOpen)
   }
 
   toggle.addEventListener('click', () => {

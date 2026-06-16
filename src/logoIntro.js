@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import fieldVert from './shaders/logoField.vert.glsl?raw'
-import fieldFrag from './shaders/logoField.frag.glsl?raw'
+import logoFieldVert from './shaders/logoField.vert.glsl?raw'
+import logoFieldFrag from './shaders/logoField.frag.glsl?raw'
 
 const FADE_MS = 1000
 
@@ -48,118 +48,122 @@ function positionMagneticField(mark) {
   mark.style.transform = `translateX(${-offsetX * 0.5}px)`
 }
 
-async function loadSvgTexture(url) {
+async function loadMaskTexture(url) {
   const response = await fetch(url)
 
   if (!response.ok) {
     throw new Error(`SVG non trovato (${response.status})`)
   }
 
-  const blob = await response.blob()
-  const objectUrl = URL.createObjectURL(blob)
+  const svgText = await response.text()
+  const blob = new Blob([svgText], { type: 'image/svg+xml' })
+  const blobUrl = URL.createObjectURL(blob)
 
   try {
-    const image = new Image()
-    image.decoding = 'async'
-    image.src = objectUrl
-    await image.decode()
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image()
+      img.decoding = 'async'
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error('SVG non caricato come immagine'))
+      img.src = blobUrl
+    })
 
-    const canvas = document.createElement('canvas')
-    canvas.width = image.naturalWidth
-    canvas.height = image.naturalHeight
-
-    const context = canvas.getContext('2d')
-    context.clearRect(0, 0, canvas.width, canvas.height)
-    context.drawImage(image, 0, 0)
-
-    const texture = new THREE.CanvasTexture(canvas)
-    texture.colorSpace = THREE.SRGBColorSpace
+    const texture = new THREE.Texture(image)
+    texture.minFilter = THREE.LinearFilter
+    texture.magFilter = THREE.LinearFilter
+    texture.generateMipmaps = false
     texture.needsUpdate = true
 
-    return texture
+    return {
+      texture,
+      width: image.naturalWidth || 736,
+      height: image.naturalHeight || 1168
+    }
   } finally {
-    URL.revokeObjectURL(objectUrl)
+    URL.revokeObjectURL(blobUrl)
   }
 }
 
-function createFieldShaderRenderer(container) {
-  let animationId = 0
-  let running = true
+async function createLogoField(container) {
+  const { texture, width, height } = await loadMaskTexture(
+    `${import.meta.env.BASE_URL}assets/disegno-logo.svg`
+  )
+
+  const texAspect = width / height
 
   const renderer = new THREE.WebGLRenderer({
     alpha: true,
     antialias: true,
-    powerPreference: 'high-performance'
+    premultipliedAlpha: false
   })
   renderer.setClearColor(0x000000, 0)
-  renderer.domElement.className = 'logoIntro__field-canvas'
-  container.appendChild(renderer.domElement)
+
+  const canvas = renderer.domElement
+  canvas.className = 'logoIntro__canvas'
+  container.appendChild(canvas)
 
   const scene = new THREE.Scene()
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
 
+  const uniforms = {
+    uMask: { value: texture },
+    uResolution: { value: new THREE.Vector2(1, 1) },
+    uFit: { value: new THREE.Vector2(1, 1) },
+    uTime: { value: 0 }
+  }
+
   const material = new THREE.ShaderMaterial({
-    uniforms: {
-      uFieldMap: { value: null },
-      uTime: { value: 0 },
-      uPulseSpeed: { value: 0.38 },
-      uFieldCenter: { value: new THREE.Vector2(0.5, 0.5) },
-      uAspect: { value: new THREE.Vector2(1, 1) }
-    },
-    vertexShader: fieldVert,
-    fragmentShader: fieldFrag,
+    uniforms,
+    vertexShader: logoFieldVert,
+    fragmentShader: logoFieldFrag,
     transparent: true,
-    depthWrite: false,
-    depthTest: false
+    depthTest: false,
+    depthWrite: false
   })
 
   scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material))
 
   function resize() {
-    const width = Math.max(container.clientWidth, 1)
-    const height = Math.max(container.clientHeight, 1)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setSize(width, height, false)
-    material.uniforms.uAspect.value.set(width / height, 1)
-  }
+    const rect = container.getBoundingClientRect()
+    const w = Math.max(1, rect.width)
+    const h = Math.max(1, rect.height)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
 
-  function animate(time) {
-    if (!running) return
-    material.uniforms.uTime.value = time * 0.001
-    renderer.render(scene, camera)
-    animationId = requestAnimationFrame(animate)
+    renderer.setPixelRatio(dpr)
+    renderer.setSize(w, h, false)
+
+    uniforms.uResolution.value.set(w * dpr, h * dpr)
+
+    const canvasAspect = w / h
+    if (texAspect > canvasAspect) {
+      uniforms.uFit.value.set(1, canvasAspect / texAspect)
+    } else {
+      uniforms.uFit.value.set(texAspect / canvasAspect, 1)
+    }
   }
 
   resize()
-  animationId = requestAnimationFrame(animate)
+
+  let raf = 0
+  const start = performance.now()
+
+  function animate() {
+    uniforms.uTime.value = (performance.now() - start) * 0.001
+    renderer.render(scene, camera)
+    raf = requestAnimationFrame(animate)
+  }
+
+  animate()
 
   return {
-    setTexture(texture) {
-      material.uniforms.uFieldMap.value = texture
-    },
     resize,
-    destroy() {
-      running = false
-      cancelAnimationFrame(animationId)
+    dispose() {
+      cancelAnimationFrame(raf)
       material.dispose()
+      texture.dispose()
       renderer.dispose()
-      renderer.domElement.remove()
+      canvas.remove()
     }
-  }
-}
-
-async function setupMagneticFieldShader(container, mark) {
-  try {
-    const texture = await loadSvgTexture(`${import.meta.env.BASE_URL}assets/disegno-logo.svg`)
-    const fieldRenderer = createFieldShaderRenderer(container)
-    fieldRenderer.setTexture(texture)
-    fieldRenderer.resize()
-    positionMagneticField(mark)
-
-    return fieldRenderer
-  } catch (error) {
-    console.error('Campo magnetico non caricato:', error)
-    return null
   }
 }
 
@@ -186,36 +190,34 @@ export function createLogoIntro() {
   document.body.appendChild(overlay)
 
   const mark = overlay.querySelector('.logoIntro__mark')
-  const fieldContainer = overlay.querySelector('.logoIntro__field')
-  let fieldRenderer = null
-
-  setupMagneticFieldShader(fieldContainer, mark).then((renderer) => {
-    fieldRenderer = renderer
-  })
+  const field = overlay.querySelector('.logoIntro__field')
+  let fieldController = null
 
   const reposition = () => {
     positionMagneticField(mark)
-    fieldRenderer?.resize()
+    fieldController?.resize()
   }
+
+  createLogoField(field)
+    .then((controller) => {
+      fieldController = controller
+      reposition()
+    })
+    .catch((error) => {
+      console.error('Campo magnetico non caricato:', error)
+    })
+
+  reposition()
 
   window.addEventListener('resize', reposition)
   document.fonts?.ready.then(reposition)
 
-  return {
-    overlay,
-    setAboutMode(active) {
-      overlay.classList.toggle('logoIntro--about-open', active)
-      mark.classList.toggle('logoIntro__mark--hidden', active)
-    },
-    destroy() {
-      window.removeEventListener('resize', reposition)
-      fieldRenderer?.destroy()
-    }
-  }
+  overlay._disposeField = () => fieldController?.dispose()
+
+  return overlay
 }
 
-export function runLogoIntro({ logoIntro, stage, onStart }) {
-  const overlay = logoIntro.overlay
+export function runLogoIntro({ overlay, stage, onStart }) {
   const button = overlay.querySelector('.logoIntro__button')
   let started = false
 
@@ -228,7 +230,7 @@ export function runLogoIntro({ logoIntro, stage, onStart }) {
     stage.classList.remove('experience-stage--blurred')
 
     await waitForTransition(overlay, FADE_MS)
-    logoIntro.destroy()
+    overlay._disposeField?.()
     overlay.remove()
     await onStart()
   })
