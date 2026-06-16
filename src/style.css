@@ -108,24 +108,15 @@ body {
   width: 100%;
   height: 100%;
   overflow: visible;
-  animation: field-breathe 4.5s ease-in-out infinite;
 }
 
 .logoIntro__path {
   fill: currentColor;
   stroke: none;
-  animation: path-shimmer 5s ease-in-out infinite;
-}
-
-@keyframes field-breathe {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-
-  50% {
-    opacity: 1;
-  }
+  opacity: 0.34;
+  animation: light-pulse 4s ease-out infinite;
+  animation-delay: var(--pulse-delay, 0s);
+  will-change: opacity, filter;
 }
 
 @keyframes field-drift {
@@ -143,14 +134,26 @@ body {
   }
 }
 
-@keyframes path-shimmer {
+@keyframes light-pulse {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.3;
+    filter: brightness(0.75) saturate(0.8) hue-rotate(0deg);
   }
 
-  50% {
+  14% {
     opacity: 1;
+    filter:
+      brightness(1.75)
+      saturate(1.5)
+      hue-rotate(var(--pulse-hue, 0deg))
+      drop-shadow(0 0 3px rgba(186, 228, 255, 0.95))
+      drop-shadow(0 0 8px rgba(140, 190, 255, 0.45));
+  }
+
+  28% {
+    opacity: 0.3;
+    filter: brightness(0.75) saturate(0.8) hue-rotate(0deg);
   }
 }
 

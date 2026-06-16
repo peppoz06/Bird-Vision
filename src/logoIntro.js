@@ -40,6 +40,34 @@ function positionMagneticField(mark) {
   field.style.top = `${centerY}px`
 }
 
+function assignRadialPulse(svg) {
+  const paths = [...svg.querySelectorAll('path')]
+  const viewBox = svg.viewBox.baseVal
+  const centerX = viewBox.x + viewBox.width / 2
+  const centerY = viewBox.y + viewBox.height / 2
+  const pulseSpread = 2.6
+
+  const samples = paths.map((path) => {
+    const box = path.getBBox()
+    const px = box.x + box.width / 2
+    const py = box.y + box.height / 2
+    const dx = px - centerX
+    const dy = py - centerY
+    const distance = Math.hypot(dx, dy)
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI)
+
+    return { path, distance, angle }
+  })
+
+  const maxDistance = Math.max(...samples.map((sample) => sample.distance), 1)
+
+  samples.forEach(({ path, distance, angle }) => {
+    const delay = (distance / maxDistance) * pulseSpread
+    path.style.setProperty('--pulse-delay', `${delay.toFixed(3)}s`)
+    path.style.setProperty('--pulse-hue', `${Math.round(angle * 0.7)}deg`)
+  })
+}
+
 async function loadMagneticField(container, mark) {
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}assets/disegno-logo.svg`)
@@ -64,13 +92,13 @@ async function loadMagneticField(container, mark) {
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
 
     const paths = svg.querySelectorAll('path')
-    paths.forEach((path, index) => {
+    paths.forEach((path) => {
       path.setAttribute('fill', 'currentColor')
       path.classList.add('logoIntro__path')
-      path.style.animationDelay = `${(index % 16) * 0.14}s`
     })
 
     container.appendChild(svg)
+    assignRadialPulse(svg)
     positionMagneticField(mark)
   } catch (error) {
     console.error('Campo magnetico non caricato:', error)
