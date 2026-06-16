@@ -58,4 +58,116 @@ body {
 }
 
 .logoIntro__button:disabled {
-  cursor: de
+  cursor: default;
+}
+
+.logoIntro__mark {
+  position: relative;
+  display: inline-block;
+  font-size: clamp(3.5rem, 16vw, 9rem);
+}
+
+.logoIntro__text {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-shadow:
+    0 0 28px rgba(255, 255, 255, 0.2),
+    0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+.logoIntro__letter {
+  display: inline-block;
+}
+
+.logoIntro__gap {
+  display: inline-block;
+  width: 0.38em;
+  flex-shrink: 0;
+}
+
+.logoIntro__field {
+  position: absolute;
+  z-index: 1;
+  width: 2.25em;
+  height: 4.75em;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.9);
+  animation: field-drift 7s ease-in-out infinite;
+}
+
+.logoIntro__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.logoIntro__path {
+  fill: currentColor;
+  stroke: none;
+  opacity: 0.34;
+  animation: light-pulse 4s ease-out infinite;
+  animation-delay: var(--pulse-delay, 0s);
+  will-change: opacity, filter;
+}
+
+@keyframes field-drift {
+  0%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+
+  33% {
+    transform: translate(-49.2%, -50.8%);
+  }
+
+  66% {
+    transform: translate(-50.8%, -49.2%);
+  }
+}
+
+@keyframes light-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    filter: brightness(0.75) saturate(0.8) hue-rotate(0deg);
+  }
+
+  14% {
+    opacity: 1;
+    filter:
+      brightness(1.75)
+      saturate(1.5)
+      hue-rotate(var(--pulse-hue, 0deg))
+      drop-shadow(0 0 3px rgba(186, 228, 255, 0.95))
+      drop-shadow(0 0 8px rgba(140, 190, 255, 0.45));
+  }
+
+  28% {
+    opacity: 0.3;
+    filter: brightness(0.75) saturate(0.8) hue-rotate(0deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .logoIntro__mark {
+    font-size: clamp(3rem, 15vw, 4.75rem);
+  }
+
+  .logoIntro__gap {
+    width: 0.34em;
+  }
+
+  .logoIntro__field {
+    width: 2.15em;
+    height: 4.5em;
+  }
+}
