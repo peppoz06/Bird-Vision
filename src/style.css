@@ -73,6 +73,17 @@ body {
   position: relative;
   display: inline-block;
   font-size: clamp(3.5rem, 16vw, 9rem);
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.logoIntro__mark--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logoIntro--about-open .logoIntro__button {
+  pointer-events: none;
 }
 
 .logoIntro__text {
@@ -107,62 +118,12 @@ body {
   height: 4.75em;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  color: rgba(255, 255, 255, 0.9);
-  animation: field-drift 7s ease-in-out infinite;
 }
 
-.logoIntro__svg {
+.logoIntro__field-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
-}
-
-.logoIntro__path {
-  fill: currentColor;
-  stroke: none;
-  opacity: 0.34;
-  animation: light-pulse 4s ease-out infinite;
-  animation-delay: var(--pulse-delay, 0s);
-  will-change: opacity, filter;
-}
-
-@keyframes field-drift {
-  0%,
-  100% {
-    transform: translate(-50%, -50%);
-  }
-
-  33% {
-    transform: translate(-49.2%, -50.8%);
-  }
-
-  66% {
-    transform: translate(-50.8%, -49.2%);
-  }
-}
-
-@keyframes light-pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-    filter: brightness(0.75) saturate(0.8) hue-rotate(0deg);
-  }
-
-  14% {
-    opacity: 1;
-    filter:
-      brightness(1.75)
-      saturate(1.5)
-      hue-rotate(var(--pulse-hue, 0deg))
-      drop-shadow(0 0 3px rgba(186, 228, 255, 0.95))
-      drop-shadow(0 0 8px rgba(140, 190, 255, 0.45));
-  }
-
-  28% {
-    opacity: 0.3;
-    filter: brightness(0.75) saturate(0.8) hue-rotate(0deg);
-  }
 }
 
 @media (max-width: 480px) {

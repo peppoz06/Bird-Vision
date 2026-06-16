@@ -209,8 +209,11 @@ async function init() {
     targetStrength = strength
   }
 
-  const logoOverlay = createLogoIntro()
-  const about = initAbout()
+  const logoIntro = createLogoIntro()
+  const about = initAbout({
+    onOpen: () => logoIntro.setAboutMode(true),
+    onClose: () => logoIntro.setAboutMode(false)
+  })
   about.showControls()
 
   async function beginInteractiveExperience() {
@@ -243,7 +246,7 @@ async function init() {
   }
 
   runLogoIntro({
-    overlay: logoOverlay,
+    logoIntro,
     stage,
     onStart: beginInteractiveExperience
   })

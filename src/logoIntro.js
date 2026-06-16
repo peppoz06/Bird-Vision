@@ -1,3 +1,7 @@
+import * as THREE from 'three'
+import fieldVert from './shaders/logoField.vert.glsl?raw'
+import fieldFrag from './shaders/logoField.frag.glsl?raw'
+
 const FADE_MS = 1000
 
 function waitForTransition(el, ms) {
@@ -44,68 +48,118 @@ function positionMagneticField(mark) {
   mark.style.transform = `translateX(${-offsetX * 0.5}px)`
 }
 
-function assignRadialPulse(svg) {
-  const paths = [...svg.querySelectorAll('path')]
-  const viewBox = svg.viewBox.baseVal
-  const centerX = viewBox.x + viewBox.width / 2
-  const centerY = viewBox.y + viewBox.height / 2
-  const pulseSpread = 2.6
+async function loadSvgTexture(url) {
+  const response = await fetch(url)
 
-  const samples = paths.map((path) => {
-    const box = path.getBBox()
-    const px = box.x + box.width / 2
-    const py = box.y + box.height / 2
-    const dx = px - centerX
-    const dy = py - centerY
-    const distance = Math.hypot(dx, dy)
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI)
+  if (!response.ok) {
+    throw new Error(`SVG non trovato (${response.status})`)
+  }
 
-    return { path, distance, angle }
-  })
+  const blob = await response.blob()
+  const objectUrl = URL.createObjectURL(blob)
 
-  const maxDistance = Math.max(...samples.map((sample) => sample.distance), 1)
+  try {
+    const image = new Image()
+    image.decoding = 'async'
+    image.src = objectUrl
+    await image.decode()
 
-  samples.forEach(({ path, distance, angle }) => {
-    const delay = (distance / maxDistance) * pulseSpread
-    path.style.setProperty('--pulse-delay', `${delay.toFixed(3)}s`)
-    path.style.setProperty('--pulse-hue', `${Math.round(angle * 0.7)}deg`)
-  })
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+
+    const context = canvas.getContext('2d')
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.drawImage(image, 0, 0)
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.needsUpdate = true
+
+    return texture
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
 }
 
-async function loadMagneticField(container, mark) {
+function createFieldShaderRenderer(container) {
+  let animationId = 0
+  let running = true
+
+  const renderer = new THREE.WebGLRenderer({
+    alpha: true,
+    antialias: true,
+    powerPreference: 'high-performance'
+  })
+  renderer.setClearColor(0x000000, 0)
+  renderer.domElement.className = 'logoIntro__field-canvas'
+  container.appendChild(renderer.domElement)
+
+  const scene = new THREE.Scene()
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uFieldMap: { value: null },
+      uTime: { value: 0 },
+      uPulseSpeed: { value: 0.38 },
+      uFieldCenter: { value: new THREE.Vector2(0.5, 0.5) },
+      uAspect: { value: new THREE.Vector2(1, 1) }
+    },
+    vertexShader: fieldVert,
+    fragmentShader: fieldFrag,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false
+  })
+
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material))
+
+  function resize() {
+    const width = Math.max(container.clientWidth, 1)
+    const height = Math.max(container.clientHeight, 1)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setSize(width, height, false)
+    material.uniforms.uAspect.value.set(width / height, 1)
+  }
+
+  function animate(time) {
+    if (!running) return
+    material.uniforms.uTime.value = time * 0.001
+    renderer.render(scene, camera)
+    animationId = requestAnimationFrame(animate)
+  }
+
+  resize()
+  animationId = requestAnimationFrame(animate)
+
+  return {
+    setTexture(texture) {
+      material.uniforms.uFieldMap.value = texture
+    },
+    resize,
+    destroy() {
+      running = false
+      cancelAnimationFrame(animationId)
+      material.dispose()
+      renderer.dispose()
+      renderer.domElement.remove()
+    }
+  }
+}
+
+async function setupMagneticFieldShader(container, mark) {
   try {
-    const response = await fetch(`${import.meta.env.BASE_URL}assets/disegno-logo.svg`)
-
-    if (!response.ok) {
-      throw new Error(`SVG non trovato (${response.status})`)
-    }
-
-    const svgText = await response.text()
-    const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
-    const svg = doc.querySelector('svg')
-
-    if (!svg) {
-      throw new Error('SVG non valido')
-    }
-
-    svg.classList.add('logoIntro__svg')
-    svg.setAttribute('role', 'presentation')
-    svg.setAttribute('aria-hidden', 'true')
-    svg.removeAttribute('width')
-    svg.removeAttribute('height')
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
-
-    const paths = svg.querySelectorAll('path')
-    paths.forEach((path) => {
-      path.setAttribute('fill', 'currentColor')
-      path.classList.add('logoIntro__path')
-    })
-
-    container.appendChild(svg)
-    assignRadialPulse(svg)
+    const texture = await loadSvgTexture(`${import.meta.env.BASE_URL}assets/disegno-logo.svg`)
+    const fieldRenderer = createFieldShaderRenderer(container)
+    fieldRenderer.setTexture(texture)
+    fieldRenderer.resize()
     positionMagneticField(mark)
+
+    return fieldRenderer
   } catch (error) {
     console.error('Campo magnetico non caricato:', error)
+    return null
   }
 }
 
@@ -132,16 +186,36 @@ export function createLogoIntro() {
   document.body.appendChild(overlay)
 
   const mark = overlay.querySelector('.logoIntro__mark')
-  loadMagneticField(overlay.querySelector('.logoIntro__field'), mark)
+  const fieldContainer = overlay.querySelector('.logoIntro__field')
+  let fieldRenderer = null
 
-  const reposition = () => positionMagneticField(mark)
+  setupMagneticFieldShader(fieldContainer, mark).then((renderer) => {
+    fieldRenderer = renderer
+  })
+
+  const reposition = () => {
+    positionMagneticField(mark)
+    fieldRenderer?.resize()
+  }
+
   window.addEventListener('resize', reposition)
   document.fonts?.ready.then(reposition)
 
-  return overlay
+  return {
+    overlay,
+    setAboutMode(active) {
+      overlay.classList.toggle('logoIntro--about-open', active)
+      mark.classList.toggle('logoIntro__mark--hidden', active)
+    },
+    destroy() {
+      window.removeEventListener('resize', reposition)
+      fieldRenderer?.destroy()
+    }
+  }
 }
 
-export function runLogoIntro({ overlay, stage, onStart }) {
+export function runLogoIntro({ logoIntro, stage, onStart }) {
+  const overlay = logoIntro.overlay
   const button = overlay.querySelector('.logoIntro__button')
   let started = false
 
@@ -154,6 +228,7 @@ export function runLogoIntro({ overlay, stage, onStart }) {
     stage.classList.remove('experience-stage--blurred')
 
     await waitForTransition(overlay, FADE_MS)
+    logoIntro.destroy()
     overlay.remove()
     await onStart()
   })
