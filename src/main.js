@@ -5,6 +5,7 @@ import { isMobileExperience } from './input/detect.js'
 import { setupDesktopInput } from './input/desktop.js'
 import { requestOrientationPermission, startCompass } from './input/mobile.js'
 import { createLogoIntro, runLogoIntro } from './logoIntro.js'
+import { initAbout } from './about.js'
 import { buildShader } from './shaders/buildShader.js'
 import fullscreenVert from './shaders/vertex.glsl?raw'
 import depthFrag from './shaders/depth.frag.glsl?raw'
@@ -209,6 +210,7 @@ async function init() {
   }
 
   const logoOverlay = createLogoIntro()
+  const about = initAbout()
 
   async function beginInteractiveExperience() {
     if (mobile) {
@@ -235,6 +237,7 @@ async function init() {
     }
 
     northInputEnabled = true
+    about.showControls()
   }
 
   runLogoIntro({

@@ -6,6 +6,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Lexend Deca';
+  src: url('../font/LexendDeca-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
 html,
 body {
   margin: 0;
@@ -169,5 +177,135 @@ body {
   .logoIntro__field {
     width: 2.15em;
     height: 4.5em;
+  }
+}
+
+.about-toggle {
+  position: fixed;
+  top: max(1.1rem, env(safe-area-inset-top, 0px));
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
+  z-index: 30;
+  border: 0;
+  padding: 0.35rem 0.1rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: clamp(0.78rem, 1.5vw, 0.95rem);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.25s ease, color 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.about-toggle--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.about-toggle:hover,
+.about-toggle--active {
+  color: #fff;
+}
+
+.about-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 66.666vw;
+  height: 100%;
+  height: 100dvh;
+  z-index: 25;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
+  transform: translateX(100%);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.about-panel--open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.about-panel__close {
+  position: sticky;
+  top: max(0.85rem, env(safe-area-inset-top, 0px));
+  float: right;
+  z-index: 2;
+  margin: max(0.85rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) 0 0;
+  border: 0;
+  padding: 0.15rem 0.45rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.about-panel__close:hover {
+  color: #fff;
+}
+
+.about-panel__inner {
+  clear: both;
+  padding:
+    0
+    clamp(1.5rem, 4vw, 3.5rem)
+    clamp(2.5rem, 5vw, 4rem);
+}
+
+.about-panel__title {
+  margin: 0 0 clamp(2rem, 4vw, 3rem);
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: clamp(28px, 4vw, 54px);
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.about-panel__section + .about-panel__section {
+  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.about-panel__heading {
+  margin: 0 0 0.85rem;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: clamp(18px, 2vw, 28px);
+  font-weight: 400;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.about-panel__body {
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: clamp(14px, 1.1vw, 18px);
+  font-weight: 300;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.about-panel__body p {
+  margin: 0 0 1rem;
+}
+
+.about-panel__body p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .about-panel {
+    width: 100%;
+    border-left: 0;
   }
 }
