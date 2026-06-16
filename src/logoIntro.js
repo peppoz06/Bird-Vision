@@ -22,26 +22,59 @@ function waitForTransition(el, ms) {
   })
 }
 
-async function loadMagneticField(container) {
-  const response = await fetch(`${import.meta.env.BASE_URL}assets/disegno-logo.svg`)
-  const svgText = await response.text()
-  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
-  const svg = doc.querySelector('svg')
+function positionMagneticField(mark) {
+  const field = mark.querySelector('.logoIntro__field')
+  const y = mark.querySelector('.logoIntro__letter--y')
+  const four = mark.querySelector('.logoIntro__letter--four')
 
-  if (!svg) return
+  if (!field || !y || !four) return
 
-  svg.classList.add('logoIntro__svg')
-  svg.setAttribute('role', 'presentation')
-  svg.setAttribute('aria-hidden', 'true')
+  const markRect = mark.getBoundingClientRect()
+  const yRect = y.getBoundingClientRect()
+  const fourRect = four.getBoundingClientRect()
 
-  const paths = svg.querySelectorAll('path')
-  paths.forEach((path, index) => {
-    path.setAttribute('fill', 'currentColor')
-    path.classList.add('logoIntro__path')
-    path.style.animationDelay = `${(index % 12) * 0.35}s`
-  })
+  const centerX = (yRect.right + fourRect.left) / 2 - markRect.left
+  const centerY = yRect.top + yRect.height / 2 - markRect.top
 
-  container.appendChild(svg)
+  field.style.left = `${centerX}px`
+  field.style.top = `${centerY}px`
+}
+
+async function loadMagneticField(container, mark) {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}assets/disegno-logo.svg`)
+
+    if (!response.ok) {
+      throw new Error(`SVG non trovato (${response.status})`)
+    }
+
+    const svgText = await response.text()
+    const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
+    const svg = doc.querySelector('svg')
+
+    if (!svg) {
+      throw new Error('SVG non valido')
+    }
+
+    svg.classList.add('logoIntro__svg')
+    svg.setAttribute('role', 'presentation')
+    svg.setAttribute('aria-hidden', 'true')
+    svg.removeAttribute('width')
+    svg.removeAttribute('height')
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+
+    const paths = svg.querySelectorAll('path')
+    paths.forEach((path, index) => {
+      path.setAttribute('fill', 'currentColor')
+      path.classList.add('logoIntro__path')
+      path.style.animationDelay = `${(index % 16) * 0.22}s`
+    })
+
+    container.appendChild(svg)
+    positionMagneticField(mark)
+  } catch (error) {
+    console.error('Campo magnetico non caricato:', error)
+  }
 }
 
 export function createLogoIntro() {
@@ -57,6 +90,7 @@ export function createLogoIntro() {
           <span class="logoIntro__letter">C</span>
           <span class="logoIntro__letter">R</span>
           <span class="logoIntro__letter logoIntro__letter--y">Y</span>
+          <span class="logoIntro__gap" aria-hidden="true"></span>
           <span class="logoIntro__letter logoIntro__letter--four">4</span>
         </span>
       </span>
@@ -64,7 +98,13 @@ export function createLogoIntro() {
   `
 
   document.body.appendChild(overlay)
-  loadMagneticField(overlay.querySelector('.logoIntro__field'))
+
+  const mark = overlay.querySelector('.logoIntro__mark')
+  loadMagneticField(overlay.querySelector('.logoIntro__field'), mark)
+
+  const reposition = () => positionMagneticField(mark)
+  window.addEventListener('resize', reposition)
+  document.fonts?.ready.then(reposition)
 
   return overlay
 }

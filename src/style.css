@@ -61,18 +61,19 @@ body {
 .logoIntro__mark {
   position: relative;
   display: inline-block;
+  font-size: clamp(2.75rem, 11vw, 6.5rem);
 }
 
 .logoIntro__text {
   position: relative;
   z-index: 2;
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   font-family: 'Lexend Deca', sans-serif;
+  font-size: 1em;
   font-weight: 400;
-  font-size: clamp(3.25rem, 13vw, 8.5rem);
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   text-shadow:
     0 0 28px rgba(255, 255, 255, 0.2),
     0 2px 18px rgba(0, 0, 0, 0.45);
@@ -82,17 +83,21 @@ body {
   display: inline-block;
 }
 
+.logoIntro__gap {
+  display: inline-block;
+  width: 0.38em;
+  flex-shrink: 0;
+}
+
 .logoIntro__field {
   position: absolute;
   z-index: 1;
-  left: 67.5%;
-  top: 46%;
-  width: 0.62em;
-  height: 1.05em;
-  transform: translate(-42%, -50%);
+  width: 2.25em;
+  height: 4.75em;
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  color: rgba(255, 255, 255, 0.72);
-  animation: field-drift 9s ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.9);
+  animation: field-drift 11s ease-in-out infinite;
 }
 
 .logoIntro__svg {
@@ -112,29 +117,33 @@ body {
 @keyframes field-breathe {
   0%,
   100% {
-    opacity: 0.42;
+    opacity: 0.72;
   }
 
   50% {
-    opacity: 0.82;
+    opacity: 1;
   }
 }
 
 @keyframes field-drift {
   0%,
   100% {
-    transform: translate(-42%, -50%);
+    transform: translate(-50%, -50%);
   }
 
-  50% {
-    transform: translate(-40%, -48%);
+  33% {
+    transform: translate(-49.6%, -50.4%);
+  }
+
+  66% {
+    transform: translate(-50.4%, -49.6%);
   }
 }
 
 @keyframes path-shimmer {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 0.62;
   }
 
   50% {
@@ -143,9 +152,16 @@ body {
 }
 
 @media (max-width: 480px) {
+  .logoIntro__mark {
+    font-size: clamp(2.35rem, 12vw, 3.4rem);
+  }
+
+  .logoIntro__gap {
+    width: 0.34em;
+  }
+
   .logoIntro__field {
-    left: 68%;
-    width: 0.58em;
-    height: 1em;
+    width: 2.15em;
+    height: 4.5em;
   }
 }
