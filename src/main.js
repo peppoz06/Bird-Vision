@@ -211,8 +211,11 @@ async function init() {
 
   const logoOverlay = createLogoIntro()
   const about = initAbout()
+  about.showControls()
 
   async function beginInteractiveExperience() {
+    about.hideControls()
+
     if (mobile) {
       if (needsOrientationPermission()) {
         try {
@@ -237,7 +240,6 @@ async function init() {
     }
 
     northInputEnabled = true
-    about.showControls()
   }
 
   runLogoIntro({

@@ -89,6 +89,10 @@ export function initAbout() {
   return {
     showControls() {
       toggle.classList.remove('about-toggle--hidden')
+    },
+    hideControls() {
+      setOpen(false)
+      toggle.classList.add('about-toggle--hidden')
     }
   }
 }
