@@ -41,7 +41,7 @@ function positionMagneticField(mark) {
 
   const markWidth = mark.offsetWidth
   const offsetX = centerX - markWidth / 2
-  mark.style.transform = `translateX(${-offsetX}px)`
+  mark.style.transform = `translateX(${-offsetX * 0.5}px)`
 }
 
 function assignRadialPulse(svg) {
