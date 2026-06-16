@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'Lexend Deca';
+  src: url('../font/LexendDeca-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 html,
 body {
   margin: 0;
@@ -22,40 +30,122 @@ body {
   filter: blur(8px);
 }
 
-.onboarding {
+.logoIntro {
   position: fixed;
   inset: 0;
   z-index: 10;
   display: grid;
   place-items: center;
-  pointer-events: none;
   opacity: 1;
   transition: opacity 1s ease;
 }
 
-.onboarding--fade-out {
+.logoIntro--fade-out {
   opacity: 0;
+  pointer-events: none;
 }
 
-.onboarding__text {
-  margin: 0;
-  padding: 0 1.5rem;
-  opacity: 0;
+.logoIntro__button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
   color: #fff;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.logoIntro__button:disabled {
+  cursor: default;
+}
+
+.logoIntro__mark {
+  position: relative;
+  display: inline-block;
+}
+
+.logoIntro__text {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: baseline;
   font-family: 'Lexend Deca', sans-serif;
   font-weight: 400;
-  font-size: clamp(28px, 6vw, 64px);
-  line-height: 1.15;
-  text-align: center;
-  white-space: pre-line;
+  font-size: clamp(3.25rem, 13vw, 8.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
   text-shadow:
-    0 0 24px rgba(255, 255, 255, 0.35),
+    0 0 28px rgba(255, 255, 255, 0.2),
     0 2px 18px rgba(0, 0, 0, 0.45);
-  transition: opacity 0.6s ease;
 }
 
-.touch-gate {
-  position: fixed;
-  inset: 0;
-  z-index: 5;
+.logoIntro__letter {
+  display: inline-block;
+}
+
+.logoIntro__field {
+  position: absolute;
+  z-index: 1;
+  left: 67.5%;
+  top: 46%;
+  width: 0.62em;
+  height: 1.05em;
+  transform: translate(-42%, -50%);
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.72);
+  animation: field-drift 9s ease-in-out infinite;
+}
+
+.logoIntro__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: field-breathe 7s ease-in-out infinite;
+}
+
+.logoIntro__path {
+  fill: currentColor;
+  stroke: none;
+  animation: path-shimmer 8s ease-in-out infinite;
+}
+
+@keyframes field-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes field-drift {
+  0%,
+  100% {
+    transform: translate(-42%, -50%);
+  }
+
+  50% {
+    transform: translate(-40%, -48%);
+  }
+}
+
+@keyframes path-shimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .logoIntro__field {
+    left: 68%;
+    width: 0.58em;
+    height: 1em;
+  }
 }

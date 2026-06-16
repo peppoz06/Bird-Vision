@@ -4,7 +4,7 @@ import { setupWebcam } from './webcam/webcam.js'
 import { isMobileExperience } from './input/detect.js'
 import { setupDesktopInput } from './input/desktop.js'
 import { requestOrientationPermission, startCompass } from './input/mobile.js'
-import { runOnboarding } from './onboarding.js'
+import { createLogoIntro, runLogoIntro } from './logoIntro.js'
 import { buildShader } from './shaders/buildShader.js'
 import fullscreenVert from './shaders/vertex.glsl?raw'
 import depthFrag from './shaders/depth.frag.glsl?raw'
@@ -109,24 +109,6 @@ function needsOrientationPermission() {
   )
 }
 
-function waitForFirstTouch() {
-  return new Promise((resolve) => {
-    const gate = document.createElement('div')
-    gate.className = 'touch-gate'
-
-    gate.addEventListener(
-      'touchstart',
-      () => {
-        gate.remove()
-        resolve()
-      },
-      { once: true, passive: true }
-    )
-
-    document.body.appendChild(gate)
-  })
-}
-
 function attachWebcamTexture(sharedUniforms, video, flipX) {
   sharedUniforms.uWebcam.value = new THREE.VideoTexture(video)
   sharedUniforms.uWebcam.value.minFilter = THREE.LinearFilter
@@ -226,40 +208,44 @@ async function init() {
     targetStrength = strength
   }
 
-  const onboardingOverlay = document.createElement('div')
-  onboardingOverlay.className = 'onboarding'
-  onboardingOverlay.innerHTML = '<p class="onboarding__text"></p>'
-  document.body.appendChild(onboardingOverlay)
+  const logoOverlay = createLogoIntro()
 
-  function beginInteractiveExperience() {
-    northInputEnabled = true
-
+  async function beginInteractiveExperience() {
     if (mobile) {
+      if (needsOrientationPermission()) {
+        try {
+          await requestOrientationPermission()
+        } catch (err) {
+          console.warn(err)
+        }
+      }
+
+      if (!sharedUniforms.uWebcam.value) {
+        try {
+          const video = await setupWebcam({ facingMode: 'environment', mobile: true })
+          attachWebcamTexture(sharedUniforms, video, 0)
+        } catch (error) {
+          console.error('Webcam non disponibile:', error)
+        }
+      }
+
       startCompass(setNorth)
     } else {
       setupDesktopInput(setNorth)
     }
+
+    northInputEnabled = true
   }
 
-  runOnboarding({
-    overlay: onboardingOverlay,
+  runLogoIntro({
+    overlay: logoOverlay,
     stage,
-    onComplete: beginInteractiveExperience
+    onStart: beginInteractiveExperience
   })
 
-  async function setupMedia() {
+  async function setupBackgroundMedia() {
     try {
       if (mobile) {
-        if (needsOrientationPermission()) {
-          await waitForFirstTouch()
-
-          try {
-            await requestOrientationPermission()
-          } catch (err) {
-            console.warn(err)
-          }
-        }
-
         const video = await setupWebcam({ facingMode: 'environment', mobile: true })
         attachWebcamTexture(sharedUniforms, video, 0)
       } else {
@@ -267,11 +253,11 @@ async function init() {
         attachWebcamTexture(sharedUniforms, video, 1)
       }
     } catch (error) {
-      console.error('Webcam non disponibile:', error)
+      console.warn('Webcam in attesa del click sul logo:', error)
     }
   }
 
-  setupMedia()
+  setupBackgroundMedia()
 
   window.addEventListener('resize', () => {
     const w = window.innerWidth
