@@ -67,7 +67,7 @@ async function loadMagneticField(container, mark) {
     paths.forEach((path, index) => {
       path.setAttribute('fill', 'currentColor')
       path.classList.add('logoIntro__path')
-      path.style.animationDelay = `${(index % 16) * 0.22}s`
+      path.style.animationDelay = `${(index % 16) * 0.14}s`
     })
 
     container.appendChild(svg)

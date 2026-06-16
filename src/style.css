@@ -51,6 +51,9 @@ body {
   background: transparent;
   cursor: pointer;
   color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -61,7 +64,7 @@ body {
 .logoIntro__mark {
   position: relative;
   display: inline-block;
-  font-size: clamp(2.75rem, 11vw, 6.5rem);
+  font-size: clamp(3.5rem, 16vw, 9rem);
 }
 
 .logoIntro__text {
@@ -97,7 +100,7 @@ body {
   transform: translate(-50%, -50%);
   pointer-events: none;
   color: rgba(255, 255, 255, 0.9);
-  animation: field-drift 11s ease-in-out infinite;
+  animation: field-drift 7s ease-in-out infinite;
 }
 
 .logoIntro__svg {
@@ -105,19 +108,19 @@ body {
   width: 100%;
   height: 100%;
   overflow: visible;
-  animation: field-breathe 7s ease-in-out infinite;
+  animation: field-breathe 4.5s ease-in-out infinite;
 }
 
 .logoIntro__path {
   fill: currentColor;
   stroke: none;
-  animation: path-shimmer 8s ease-in-out infinite;
+  animation: path-shimmer 5s ease-in-out infinite;
 }
 
 @keyframes field-breathe {
   0%,
   100% {
-    opacity: 0.72;
+    opacity: 0.55;
   }
 
   50% {
@@ -132,18 +135,18 @@ body {
   }
 
   33% {
-    transform: translate(-49.6%, -50.4%);
+    transform: translate(-49.2%, -50.8%);
   }
 
   66% {
-    transform: translate(-50.4%, -49.6%);
+    transform: translate(-50.8%, -49.2%);
   }
 }
 
 @keyframes path-shimmer {
   0%,
   100% {
-    opacity: 0.62;
+    opacity: 0.45;
   }
 
   50% {
@@ -153,7 +156,7 @@ body {
 
 @media (max-width: 480px) {
   .logoIntro__mark {
-    font-size: clamp(2.35rem, 12vw, 3.4rem);
+    font-size: clamp(3rem, 15vw, 4.75rem);
   }
 
   .logoIntro__gap {
