@@ -134,4 +134,8 @@ export function initAbout({ onToggle } = {}) {
     },
     peek(ms = PEEK_MS) {
       if (!peekMode || isOpen) return
-      toggle.classL
+      toggle.classList.remove('about-toggle--hidden')
+      scheduleHide(ms)
+    }
+  }
+}
