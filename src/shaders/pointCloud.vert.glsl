@@ -64,31 +64,42 @@ void main() {
   vec2 northTangent = vec2(-northScreenDir.y, northScreenDir.x);
 
   // Agitazione proporzionale a quanto si e distanti dal nord (vMisalign).
-  float agitateAmount = vMisalign * (0.6 + 0.4 * smoothstep(0.05, 0.7, d));
+  float agitateAmount = vMisalign * (0.55 + 0.45 * smoothstep(0.05, 0.7, d));
 
-  // Scatto ritmico verso il nord: ogni punto "dardeggia" nella direzione giusta,
-  // suggerendo all'utente da che parte muoversi.
-  float flickPhase = uTime * 9.0
-    + hash(pointUv * 12.0) * 6.2831
-    + dot(pointUv, northScreenDir) * 8.0;
+  // Onda coerente che attraversa l'intera nuvola viaggiando VERSO il nord:
+  // tutti i punti si muovono in modo ordinato nella direzione giusta, dando
+  // un chiaro senso di flusso che indica dove muoversi.
+  float wavePhase = dot(pointUv - 0.5, northScreenDir) * 9.0 - uTime * 6.5;
+  vec2 directionalWave = northScreenDir * sin(wavePhase);
+
+  // Deriva pulsante netta verso il nord (lean collettivo della nuvola).
+  vec2 drift = northScreenDir * (0.6 + 0.4 * sin(uTime * 3.5));
+
+  // Scatto rapido dei singoli punti verso il nord.
+  float flickPhase = uTime * 11.0 + hash(pointUv * 12.0) * 6.2831;
   float flick = pow(0.5 + 0.5 * sin(flickPhase), 3.0);
+  vec2 flickDir = northScreenDir * flick;
 
   // Vibrazione trasversale lieve per dare energia senza confondere la direzione.
-  float shimmer = sin(uTime * 24.0 + hash(pointUv * 5.1) * 6.2831);
+  float shimmer = sin(uTime * 22.0 + hash(pointUv * 5.1) * 6.2831);
 
-  vec2 directional = northScreenDir * flick + northTangent * shimmer * 0.22;
+  vec2 directional =
+    directionalWave * 1.1 +
+    drift * 0.5 +
+    flickDir * 0.7 +
+    northTangent * shimmer * 0.18;
 
   // Residuo caotico minimo.
   vec2 chaos = vec2(
     sin(uTime * 26.0 + hash(pointUv * 3.7) * 10.0),
     cos(uTime * 30.0 + hash(pointUv * 5.1) * 10.0)
-  ) * 0.12;
+  ) * 0.1;
 
   vec2 agitate = directional + chaos;
-  vec2 agitateOffset = agitate * agitateAmount * 0.03;
+  vec2 agitateOffset = agitate * agitateAmount * 0.05;
 
   // Lo spostamento UV resta lieve per non strappare il colore.
-  distortedUv += agitateOffset * mix(1.0, 0.3, agitateAmount);
+  distortedUv += agitateOffset * mix(1.0, 0.25, agitateAmount);
 
   vec2 texUv = sampleTexUv(distortedUv);
   vec3 rawColor = texture2D(uWebcam, texUv).rgb;
