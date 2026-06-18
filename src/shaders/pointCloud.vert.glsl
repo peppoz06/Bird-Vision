@@ -57,20 +57,38 @@ void main() {
   distortedUv += electricFieldNoise(sampleUv, toNorth, d, uTime, crackle) * vElectricStrength * 1.4;
   vCrackle = crackle;
 
-  // Agitazione punti: manifesta direzione errata
-  float agitateAmount = vMisalign * (0.65 + 0.35 * smoothstep(0.1, 0.7, d));
-  vec2 agitate = vec2(
-    sin(uTime * 16.0 + pointUv.x * 55.0 + hash(pointUv * 12.0) * 6.28),
-    cos(uTime * 19.0 + pointUv.y * 49.0 + hash(pointUv * 7.0 + 2.1) * 6.28)
-  );
-  agitate += vec2(
-    sin(uTime * 27.0 + hash(pointUv * 3.7) * 10.0),
-    cos(uTime * 31.0 + hash(pointUv * 5.1) * 10.0)
-  ) * 0.4;
+  // Direzione del nord sullo schermo: verso dove l'utente deve ruotare.
+  vec2 northScreenDir = mouse - vec2(0.5, 0.5);
+  float northDirLen = length(northScreenDir);
+  northScreenDir = northDirLen > 0.001 ? northScreenDir / northDirLen : vec2(0.0);
+  vec2 northTangent = vec2(-northScreenDir.y, northScreenDir.x);
 
-  vec2 agitateOffset = agitate * agitateAmount * 0.016;
-  // Agitazione spaziale si; UV solo leggera per non strappare il colore
-  distortedUv += agitateOffset * mix(1.0, 0.35, agitateAmount);
+  // Agitazione proporzionale a quanto si e distanti dal nord (vMisalign).
+  float agitateAmount = vMisalign * (0.6 + 0.4 * smoothstep(0.05, 0.7, d));
+
+  // Scatto ritmico verso il nord: ogni punto "dardeggia" nella direzione giusta,
+  // suggerendo all'utente da che parte muoversi.
+  float flickPhase = uTime * 9.0
+    + hash(pointUv * 12.0) * 6.2831
+    + dot(pointUv, northScreenDir) * 8.0;
+  float flick = pow(0.5 + 0.5 * sin(flickPhase), 3.0);
+
+  // Vibrazione trasversale lieve per dare energia senza confondere la direzione.
+  float shimmer = sin(uTime * 24.0 + hash(pointUv * 5.1) * 6.2831);
+
+  vec2 directional = northScreenDir * flick + northTangent * shimmer * 0.22;
+
+  // Residuo caotico minimo.
+  vec2 chaos = vec2(
+    sin(uTime * 26.0 + hash(pointUv * 3.7) * 10.0),
+    cos(uTime * 30.0 + hash(pointUv * 5.1) * 10.0)
+  ) * 0.12;
+
+  vec2 agitate = directional + chaos;
+  vec2 agitateOffset = agitate * agitateAmount * 0.03;
+
+  // Lo spostamento UV resta lieve per non strappare il colore.
+  distortedUv += agitateOffset * mix(1.0, 0.3, agitateAmount);
 
   vec2 texUv = sampleTexUv(distortedUv);
   vec3 rawColor = texture2D(uWebcam, texUv).rgb;
@@ -90,9 +108,9 @@ void main() {
   pos.xy += radial * farFromNorth * length(radial) * 0.055;
   pos.xy += jitter / uGridSize * 0.04;
 
-  // Shake spaziale quando la bussola e fuori dal nord
+  // Shake spaziale direzionale quando la bussola e fuori dal nord
   pos.xy += agitateOffset;
-  pos.z += sin(uTime * 22.0 + pointUv.x * 80.0 + pointUv.y * 60.0) * agitateAmount * 0.03;
+  pos.z += sin(uTime * 20.0 + pointUv.x * 80.0 + pointUv.y * 60.0) * agitateAmount * 0.025;
 
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mvPosition;
