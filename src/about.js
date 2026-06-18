@@ -62,7 +62,24 @@ export function initAbout({ onToggle } = {}) {
   document.body.appendChild(panel)
 
   const closeButton = panel.querySelector('.about-panel__close')
+  const PEEK_MS = 3000
   let isOpen = false
+  let peekMode = false
+  let peekTimer = 0
+
+  function clearPeek() {
+    window.clearTimeout(peekTimer)
+    peekTimer = 0
+  }
+
+  function scheduleHide(ms) {
+    clearPeek()
+    peekTimer = window.setTimeout(() => {
+      if (!isOpen) {
+        toggle.classList.add('about-toggle--hidden')
+      }
+    }, ms)
+  }
 
   function setOpen(nextOpen) {
     isOpen = nextOpen
@@ -71,6 +88,14 @@ export function initAbout({ onToggle } = {}) {
     toggle.setAttribute('aria-expanded', String(isOpen))
     panel.setAttribute('aria-hidden', String(!isOpen))
     onToggle?.(isOpen)
+
+    if (peekMode) {
+      if (isOpen) {
+        clearPeek()
+      } else {
+        scheduleHide(PEEK_MS)
+      }
+    }
   }
 
   toggle.addEventListener('click', () => {
@@ -89,11 +114,26 @@ export function initAbout({ onToggle } = {}) {
 
   return {
     showControls() {
+      peekMode = false
+      clearPeek()
       toggle.classList.remove('about-toggle--hidden')
     },
     hideControls() {
+      peekMode = false
+      clearPeek()
       setOpen(false)
       toggle.classList.add('about-toggle--hidden')
+    },
+    enablePeek() {
+      setOpen(false)
+      peekMode = true
+      clearPeek()
+      toggle.classList.add('about-toggle--hidden')
+    },
+    peek(ms = PEEK_MS) {
+      if (!peekMode || isOpen) return
+      toggle.classList.remove('about-toggle--hidden')
+      scheduleHide(ms)
     }
   }
 }

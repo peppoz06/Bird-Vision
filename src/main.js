@@ -110,6 +110,18 @@ function needsOrientationPermission() {
   )
 }
 
+function showDesktopNotice() {
+  const notice = document.createElement('div')
+  notice.className = 'desktop-notice'
+  notice.textContent = 'Open this site on mobile for the full experience'
+  document.body.appendChild(notice)
+
+  window.setTimeout(() => {
+    notice.classList.add('desktop-notice--hidden')
+    window.setTimeout(() => notice.remove(), 900)
+  }, 5000)
+}
+
 function attachWebcamTexture(sharedUniforms, video, flipX) {
   sharedUniforms.uWebcam.value = new THREE.VideoTexture(video)
   sharedUniforms.uWebcam.value.minFilter = THREE.LinearFilter
@@ -217,8 +229,17 @@ async function init() {
   })
   about.showControls()
 
+  if (!mobile) {
+    showDesktopNotice()
+  }
+
   async function beginInteractiveExperience() {
-    about.hideControls()
+    if (mobile) {
+      about.enablePeek()
+      window.addEventListener('pointerdown', () => about.peek())
+    } else {
+      about.hideControls()
+    }
 
     if (mobile) {
       if (needsOrientationPermission()) {
