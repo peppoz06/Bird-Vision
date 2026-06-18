@@ -245,6 +245,15 @@ body {
 }
 
 .about-panel__title {
+  margin: 0 0 0.5em;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: clamp(28px, 4vw, 54px);
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.about-panel__subtitle {
   margin: 0 0 clamp(2rem, 4vw, 3rem);
   font-family: 'Lexend Deca', sans-serif;
   font-size: clamp(28px, 4vw, 54px);

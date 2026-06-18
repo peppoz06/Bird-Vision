@@ -119,7 +119,7 @@ function showDesktopNotice() {
   window.setTimeout(() => {
     notice.classList.add('desktop-notice--hidden')
     window.setTimeout(() => notice.remove(), 900)
-  }, 5000)
+  }, 10000)
 }
 
 function attachWebcamTexture(sharedUniforms, video, flipX) {

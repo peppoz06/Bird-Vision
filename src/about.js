@@ -17,6 +17,8 @@ export function initAbout({ onToggle } = {}) {
         An artistic exploration of avian magnetoreception
       </h1>
 
+      <p class="about-panel__subtitle">Move around to find North</p>
+
       <section class="about-panel__section">
         <h2 class="about-panel__heading">The phenomenon</h2>
         <div class="about-panel__body">
@@ -132,8 +134,4 @@ export function initAbout({ onToggle } = {}) {
     },
     peek(ms = PEEK_MS) {
       if (!peekMode || isOpen) return
-      toggle.classList.remove('about-toggle--hidden')
-      scheduleHide(ms)
-    }
-  }
-}
+      toggle.classL
